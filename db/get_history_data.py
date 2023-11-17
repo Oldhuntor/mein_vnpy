@@ -83,7 +83,7 @@ column_names = [
 ]
 # Example usage
 # Replace '<exchange_domain>' with the actual domain of the API.
-insid = 'BTC-USDT'
+insid = 'EOS-USDT'
 historical_data = get_historical_kline_data(insid, '2023-11-11', '2023-11-12', bar='1m')
 df = pd.DataFrame(historical_data, columns=column_names)
 df['Timestamp'] = pd.to_datetime(df['Timestamp'], unit='ms')
