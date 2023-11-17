@@ -590,6 +590,14 @@ class ArrayManager(object):
             return result
         return result[-1]
 
+    def ohlc4(self,) ->np.ndarray:
+        o = self.open_array
+        h = self.high_array
+        l = self.low_array
+        c = self.close_array
+        average_array = np.mean([o, h, l, c], axis=0)
+        return average_array
+
     def ema(self, n: int, array: bool = False) -> Union[float, np.ndarray]:
         """
         Exponential moving average.

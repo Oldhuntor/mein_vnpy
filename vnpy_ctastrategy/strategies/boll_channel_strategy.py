@@ -101,7 +101,7 @@ class BollChannelStrategy(CtaTemplate):
         self.boll_up, self.boll_down = am.boll(self.boll_window, self.boll_dev)
         self.cci_value = am.cci(self.cci_window)
         self.atr_value = am.atr(self.atr_window)
-
+        print(f"self.pos : {self.pos}")
         if self.pos == 0:
             self.intra_trade_high = bar.high_price
             self.intra_trade_low = bar.low_price
