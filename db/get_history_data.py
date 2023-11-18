@@ -4,6 +4,9 @@ from datetime import datetime
 import pytz
 import pandas as pd
 
+insid = 'ETH-USDT-SWAP'
+
+
 def timestamp_to_datetime(timestamp, timezone='UTC'):
     """
     Convert a Unix timestamp to a datetime object in the specified timezone.
@@ -41,6 +44,7 @@ def get_historical_kline_data(instId, start_time, end_time, bar=None, limit=100)
     all_data = []
     before = start_timestamp
 
+    count = 0
     # Fetch data in a loop until we reach the end timestamp
     while True:
         # Request parameters
@@ -74,21 +78,24 @@ def get_historical_kline_data(instId, start_time, end_time, bar=None, limit=100)
 
         # Respect the rate limit
         time.sleep(0.1)  # Sleep for 100ms to avoid hitting the rate limit
+        count += 1
+        if count % 100 == 0:
+            save_data(all_data, count)
 
-    return all_data
+def save_data(all_data, count):
+    column_names = [
+        "Timestamp", "Open", "High", "Low", "Close", "Volume", "VolumeCurrency", "VolumeCurrencyQuote", "Confirm"
+    ]
+    # Example usage
+    # Replace '<exchange_domain>' with the actual domain of the API.
+    df = pd.DataFrame(all_data, columns=column_names)
+    df['Timestamp'] = pd.to_datetime(df['Timestamp'], unit='ms')
+    df_sorted = df.sort_values(by='Timestamp', ascending=True)
+    df_sorted.to_csv(f'./{insid}_{count/100}.csv', index=False)
 
 
-column_names = [
-    "Timestamp", "Open", "High", "Low", "Close", "Volume", "VolumeCurrency", "VolumeCurrencyQuote", "Confirm"
-]
-# Example usage
-# Replace '<exchange_domain>' with the actual domain of the API.
-insid = 'ETH-USDT'
-historical_data = get_historical_kline_data(insid, '2020-1-1', '2023-11-12', bar='1m')
-df = pd.DataFrame(historical_data, columns=column_names)
-df['Timestamp'] = pd.to_datetime(df['Timestamp'], unit='ms')
-df_sorted = df.sort_values(by='Timestamp', ascending=True)
-df_sorted.to_csv(f'./{insid}.csv', index=False)
+historical_data = get_historical_kline_data(insid, '2021-11-1', '2022-11-12', bar='1m')
+
 
 
 

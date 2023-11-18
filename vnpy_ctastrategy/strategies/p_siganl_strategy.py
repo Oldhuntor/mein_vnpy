@@ -19,7 +19,6 @@ class PSignalStrategy(CtaTemplate):
 
     # Parameters and constants of P-Signal
     nPoints = 9
-    nIntr = nPoints - 1
     fixed_size = 1
 
     parameters = ["nPoints", "fixed_size"]
@@ -29,7 +28,7 @@ class PSignalStrategy(CtaTemplate):
         super().__init__(cta_engine, strategy_name, vt_symbol, setting)
 
         self.bg = BarGenerator(self.on_bar)
-        self.am = ArrayManager()
+        self.am = ArrayManager((self.nPoints)*2)
 
     def on_init(self):
         """
@@ -37,6 +36,7 @@ class PSignalStrategy(CtaTemplate):
         """
         self.write_log("策略初始化")
         self.load_bar(1000)
+        self.nIntr = self.nPoints - 1
 
     def on_start(self):
         """
@@ -62,23 +62,20 @@ class PSignalStrategy(CtaTemplate):
         if not self.am.inited:
             return
 
-        fPSignal = self.fPSignal(np.diff(self.ohlc4()), self.nIntr)
-        nPSignal:np.ndarray = talib.SMA(fPSignal, self.nIntr)
+        # fPSignal = self.fPSignal(np.diff(self.ohlc4()), self.nIntr)
+        nPSignal:np.ndarray = talib.SMA(self.fPSignal(np.diff(self.ohlc4()), self.nIntr), self.nIntr)
         ndPSignal = self.sign((nPSignal[-1] - nPSignal[-2]))
-
         nPSignal = nPSignal[-1]
 
         print(f"nPSignal{nPSignal}, ndPSignal{ndPSignal}")
         # Strategy logic
         if nPSignal < 0 and ndPSignal > 0 and self.pos == 0:
-            self.buy(bar.open_price, volume=self.fixed_size)
+            self.buy(bar.close_price, volume=self.fixed_size)
             print(f"buy {self.fixed_size}, at price: {bar.close_price}, position{self.pos}")
 
         elif nPSignal > 0 and ndPSignal < 0 and self.pos != 0 :
             print(f"cover {self.pos}, at price: {bar.close_price}, position{self.pos}")
-            self.cover(bar.open_price, self.pos)
-
-        self.put_event()
+            self.sell(bar.open_price, self.pos)
 
 
     def fPSignal(self, array:np.ndarray, size:int)->np.ndarray:
@@ -146,6 +143,7 @@ class PSignalStrategy(CtaTemplate):
         Callback of new trade data update.
         """
         self.put_event()
+
     def on_stop_order(self, stop_order: StopOrder):
         """
         Callback of stop order update.
