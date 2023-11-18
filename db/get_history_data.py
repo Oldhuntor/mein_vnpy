@@ -3,6 +3,7 @@ import time
 from datetime import datetime
 import pytz
 import pandas as pd
+import os
 
 insid = 'ETH-USDT-SWAP'
 
@@ -81,6 +82,8 @@ def get_historical_kline_data(instId, start_time, end_time, bar=None, limit=100)
         count += 1
         if count % 100 == 0:
             save_data(all_data, count)
+            all_data = []
+
 
 def save_data(all_data, count):
     column_names = [
@@ -94,7 +97,18 @@ def save_data(all_data, count):
     df_sorted.to_csv(f'./{insid}_{count/100}.csv', index=False)
 
 
-historical_data = get_historical_kline_data(insid, '2021-11-1', '2022-11-12', bar='1m')
+def get_allFileNames():
+    # Replace 'your_directory_path' with the path to the directory you want to list files from
+    folder_path = f"./{insid}"
+    file_names = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
+    return file_names
+
+def merge_data():
+    path = f"./{insid}"
+
+
+if __name__ == '__main__':
+    historical_data = get_historical_kline_data(insid, '2021-11-1', '2022-11-12', bar='1m')
 
 
 

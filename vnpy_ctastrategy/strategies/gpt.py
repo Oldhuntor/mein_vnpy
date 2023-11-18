@@ -26,7 +26,7 @@ class Gpt(CtaTemplate):
         super().__init__(cta_engine, strategy_name, vt_symbol, setting)
 
         self.bg = BarGenerator(self.on_bar, self.time_frame, self.on_k_bar)
-        self.am = ArrayManager(size=self.n_points*2*self.time_frame)  # 需要足够的窗口大小来计算指标
+        self.am = ArrayManager(size=self.n_points*2)  # 需要足够的窗口大小来计算指标
 
     def on_init(self):
         """
