@@ -19,7 +19,7 @@ SETTINGS["log.level"] = INFO
 SETTINGS["log.console"] = True
 
 bt_parameters = {
-    'vt_symbol' : 'BTCUSDT.BINANCE',
+    'vt_symbol' : 'ETHUSDT.BINANCE',
     'interval' : Interval.MINUTE,
     'start' : datetime(2022,7,1),
     'rate' : 0.0008,
