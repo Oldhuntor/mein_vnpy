@@ -12,7 +12,7 @@ from vnpy_ctastrategy import (
 import numpy as np
 import talib
 
-class Gpt(CtaTemplate):
+class Psignal(CtaTemplate):
     author = "xuanhao"
 
     n_points = 9
@@ -27,6 +27,8 @@ class Gpt(CtaTemplate):
 
         self.bg = BarGenerator(self.on_bar, self.time_frame, self.on_k_bar)
         self.am = ArrayManager(size=self.n_points*2)  # 需要足够的窗口大小来计算指标
+        self.last_trade = "sell"
+        self.sigal_list = []
 
     def on_init(self):
         """
@@ -67,16 +69,19 @@ class Gpt(CtaTemplate):
                  self.am.low_array + self.am.close_array) / 4
         ohlc4_changes = np.diff(ohlc4)
 
-        n_psignal = talib.SMA(self.f_psignal(ohlc4_changes, self.n_points-1), self.n_points-1)
-        nd_psignal = np.sign(n_psignal[-1] - n_psignal[-2])
+        f_psignal = self.f_psignal(ohlc4_changes, self.n_points-1)
 
-        if n_psignal[-1] < 0 and nd_psignal > 0 and self.pos == 0 :
-            self.buy(bar.close_price, self.fixed_size)
+        if len(f_psignal):
+            n_psignal = talib.SMA(self.f_psignal(ohlc4_changes, self.n_points-1), self.n_points-1)
+            nd_psignal = np.sign(n_psignal[-1] - n_psignal[-2])
 
-        elif n_psignal[-1] > 0 and nd_psignal < 0 and self.pos != 0:
-            self.sell(bar.close_price, self.pos)
+            if n_psignal[-1] < 0 and nd_psignal > 0 and self.last_trade == "sell":
+                self.buy(bar.close_price, self.fixed_size)
+                self.last_trade = "buy"
 
-        self.put_event()
+            elif n_psignal[-1] > 0 and nd_psignal < 0 and self.last_trade == "buy" :
+                self.sell(bar.close_price, self.pos)
+                self.last_trade = "sell"
 
 
     def on_bar(self, bar: BarData):
@@ -99,6 +104,9 @@ class Gpt(CtaTemplate):
         valid_indices = ~np.isnan(n_stdev) & ~np.isnan(n_sma)
         n_stdev = n_stdev[valid_indices]
         n_sma = n_sma[valid_indices]
+
+        if 0 in n_stdev:
+            return []
 
         return np.where(n_stdev > 0, np.vectorize(self.f_erf)(n_sma/n_stdev/np.sqrt(2)), np.sign(n_sma))
 

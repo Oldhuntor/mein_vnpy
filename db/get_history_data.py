@@ -108,7 +108,7 @@ def merge_data():
 
 
 if __name__ == '__main__':
-    historical_data = get_historical_kline_data(insid, '2021-11-1', '2022-11-12', bar='1m')
+    historical_data = get_historical_kline_data(insid, '2021-11-1', '2023-11-12', bar='1d')
 
 
 

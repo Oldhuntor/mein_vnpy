@@ -5,6 +5,9 @@ from vnpy_okx import OkxGateway
 from vnpy_ctastrategy import CtaStrategyApp
 from vnpy_ctabacktester import CtaBacktesterApp
 from vnpy_datamanager import DataManagerApp
+from vnpy_binance import BinanceSpotGateway
+from vnpy_binance import BinanceInverseGateway
+from vnpy_binance import BinanceUsdtGateway
 
 def main():
     """Start VeighNa Trader"""
@@ -14,6 +17,10 @@ def main():
     main_engine = MainEngine(event_engine)
 
     main_engine.add_gateway(OkxGateway)
+    main_engine.add_gateway(BinanceSpotGateway)
+    main_engine.add_gateway(BinanceInverseGateway)
+    main_engine.add_gateway(BinanceUsdtGateway)
+
     main_engine.add_app(CtaStrategyApp)
     main_engine.add_app(CtaBacktesterApp)
     main_engine.add_app(DataManagerApp)
