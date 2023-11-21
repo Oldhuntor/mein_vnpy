@@ -22,7 +22,7 @@ bt_parameters = {
     'vt_symbol' : 'BTCUSDT.BINANCE',
     'interval' : Interval.MINUTE,
     'start' : datetime(2021,7,1),
-    'rate' : 0.0008,
+    'rate' : 0.0005,
     'slippage' : 0,
     'size' : 1,
     'pricetick' : 0.1,
@@ -113,8 +113,8 @@ def run_backtest_multi(cta_setting:dict):
 
     # btEngine.show_chart()
 n_points_range = [13,21,34,55,89,144,233,377,610,987,1597]
-time_frame = [5] # w8
-# time_frame = [15] # w5
+# time_frame = [5] # w8
+time_frame = [15] # w5
 # time_frame = [30] # w4
 # time_frame = [45, 60, 120, 240] # w3
 
