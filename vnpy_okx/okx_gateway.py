@@ -74,7 +74,8 @@ STATUS_OKX2VT: Dict[str, Status] = {
 ORDERTYPE_OKX2VT: Dict[str, OrderType] = {
     "limit": OrderType.LIMIT,
     "fok": OrderType.FOK,
-    "ioc": OrderType.FAK
+    "ioc": OrderType.FAK,
+    "market": OrderType.MARKET
 }
 ORDERTYPE_VT2OKX: Dict[OrderType, str] = {v: k for k, v in ORDERTYPE_OKX2VT.items()}
 
@@ -928,7 +929,8 @@ def parse_order_data(data: dict, gateway_name: str) -> OrderData:
         local_orderids.add(order_id)
     else:
         order_id: str = data["ordId"]
-
+    if data["px"] == '':
+        data["px"] = 0
     order: OrderData = OrderData(
         symbol=data["instId"],
         exchange=Exchange.OKX,

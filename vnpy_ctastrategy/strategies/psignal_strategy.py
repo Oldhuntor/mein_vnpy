@@ -28,6 +28,9 @@ class Psignal(CtaTemplate):
         self.bg = BarGenerator(self.on_bar, self.time_frame, self.on_k_bar)
         self.am = ArrayManager(size=self.n_points*2)  # 需要足够的窗口大小来计算指标
         self.last_trade = "sell"
+        self.nd_psignal = 0
+        self.n_psignal = 1
+
 
     def on_init(self):
         """
@@ -60,10 +63,10 @@ class Psignal(CtaTemplate):
         """
         通用 对不同粒度对K线操作
         """
+        print(bar)
         self.am.update_bar(bar)
         if not self.am.inited:
             return
-
         ohlc4 = (self.am.open_array + self.am.high_array +
                  self.am.low_array + self.am.close_array) / 4
         ohlc4_changes = np.diff(ohlc4)
@@ -72,17 +75,19 @@ class Psignal(CtaTemplate):
 
         if len(f_psignal):
             n_psignal = talib.SMA(self.f_psignal(ohlc4_changes, self.n_points-1), self.n_points-1)
-            nd_psignal = np.sign(n_psignal[-1] - n_psignal[-2])
+            self.n_psignal = float(n_psignal[-1])
 
-            if n_psignal[-1] < 0 and nd_psignal > 0 and self.last_trade == "sell":
+            self.nd_psignal = np.sign(n_psignal[-1] - n_psignal[-2])
+
+            if n_psignal[-1] < 0 and self.nd_psignal > 0 and self.last_trade == "sell":
                 self.buy(bar.close_price, self.fixed_size)
                 self.last_trade = "buy"
 
-            elif n_psignal[-1] > 0 and nd_psignal < 0 and self.last_trade == "buy" :
+            elif n_psignal[-1] > 0 and self.nd_psignal < 0 and self.last_trade == "buy" :
                 self.sell(bar.close_price, self.pos)
                 self.last_trade = "sell"
 
-
+        self.put_event()
     def on_bar(self, bar: BarData):
         """
         Callback of new bar data update.
