@@ -27,7 +27,9 @@ from vnpy.trader.object import (
 from vnpy.trader.event import (
     EVENT_TICK,
     EVENT_ORDER,
-    EVENT_TRADE
+    EVENT_TRADE,
+    EVENT_ACCOUNT,
+    EVENT_POSITION
 )
 from vnpy.trader.constant import (
     Direction,
@@ -115,6 +117,8 @@ class CtaEngine(BaseEngine):
         self.event_engine.register(EVENT_TICK, self.process_tick_event)
         self.event_engine.register(EVENT_ORDER, self.process_order_event)
         self.event_engine.register(EVENT_TRADE, self.process_trade_event)
+        self.event_engine.register(EVENT_ACCOUNT, self.process_account_event)
+        self.event_engine.register(EVENT_POSITION, self.process_position_event)
 
     def init_datafeed(self) -> None:
         """
@@ -212,6 +216,14 @@ class CtaEngine(BaseEngine):
 
         # Update GUI
         self.put_strategy_event(strategy)
+
+    def process_position_event(self, event: Event) -> None:
+
+        pass
+
+    def process_account_event(self, event: Event) -> None:
+
+        pass
 
     def check_stop_order(self, tick: TickData) -> None:
         """"""
