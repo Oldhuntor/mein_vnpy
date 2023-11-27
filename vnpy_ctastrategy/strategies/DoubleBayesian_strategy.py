@@ -10,7 +10,7 @@ from vnpy_ctastrategy import (
 )
 import numpy as np
 from scipy.stats import binom
-
+import pandas as pd
 class DoubleBayesianStrategy(CtaTemplate):
     author = "Xuanhao"
 
@@ -33,7 +33,7 @@ class DoubleBayesianStrategy(CtaTemplate):
         self.bg_short = BarGenerator(self.on_bar, self.short_trend_period, self.on_short_bar)
         self.am_long = ArrayManager(self.long_trend_window_size)
         self.am_short = ArrayManager(self.short_trend_window_size)
-
+        self.bayesian_stat = []
 
     def on_init(self):
         self.write_log("策略初始化")
@@ -78,14 +78,16 @@ class DoubleBayesianStrategy(CtaTemplate):
 
         p_D = self.compute_normalizing_constant(ups)
         self.posterior = likelihood * self.prior / p_D
-        # print(f"posterior: {self.posterior}, prior: {self.prior}, likelihood: {likelihood}，compute_normalizing_constant:{p_D}")
+        msg = f"posterior: {self.posterior}, prior: {self.prior}, likelihood: {likelihood}，compute_normalizing_constant:{p_D}"
+        print(msg)
+        self.bayesian_stat.append(msg)
 
 
-        if self.posterior >= self.buy_threshold:
+        if self.posterior >= self.buy_threshold and self.pos == 0:
             self.buy(short_bar.close_price, self.fix_size)
             # print(f"buy {self.fix_size} at price {short_bar.close_price} on {short_bar.datetime}")
 
-        elif self.posterior <= self.sell_threshold:
+        elif self.posterior <= self.sell_threshold and self.pos !=0:
             self.sell(short_bar.close_price, self.fix_size)
             # print(f"sell {self.fix_size} at price {short_bar.close_price} on {short_bar.datetime}")
 
