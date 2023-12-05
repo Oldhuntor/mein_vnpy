@@ -27,9 +27,9 @@ class Psignal(CtaTemplate):
 
         self.bg = BarGenerator(self.on_bar, self.time_frame, self.on_k_bar)
         self.am = ArrayManager(size=self.n_points*2)  # 需要足够的窗口大小来计算指标
-        self.last_trade = "sell"
         self.nd_psignal = 0
         self.n_psignal = 1
+        self.order_id = ""
 
 
     def on_init(self):
@@ -63,10 +63,14 @@ class Psignal(CtaTemplate):
         """
         通用 对不同粒度对K线操作
         """
-        print(bar)
         self.am.update_bar(bar)
         if not self.am.inited:
             return
+
+        # if self.order_id:
+        #     self.cancel_all()
+        #     return
+
         ohlc4 = (self.am.open_array + self.am.high_array +
                  self.am.low_array + self.am.close_array) / 4
         ohlc4_changes = np.diff(ohlc4)
@@ -79,15 +83,14 @@ class Psignal(CtaTemplate):
 
             self.nd_psignal = np.sign(n_psignal[-1] - n_psignal[-2])
 
-            if n_psignal[-1] < 0 and self.nd_psignal > 0 and self.last_trade == "sell":
-                self.buy(bar.close_price, self.fixed_size)
-                self.last_trade = "buy"
+            if n_psignal[-1] < 0 and self.nd_psignal > 0 and self.pos == 0:
+                self.order_id = self.buy(bar.close_price, self.fixed_size)
 
-            elif n_psignal[-1] > 0 and self.nd_psignal < 0 and self.last_trade == "buy" :
-                self.sell(bar.close_price, self.pos)
-                self.last_trade = "sell"
+            elif n_psignal[-1] > 0 and self.nd_psignal < 0 and self.pos != 0:
+                self.order_id = self.short(bar.close_price, self.pos)
 
         self.put_event()
+
     def on_bar(self, bar: BarData):
         """
         Callback of new bar data update.
@@ -118,12 +121,14 @@ class Psignal(CtaTemplate):
         """
         Callback of new order data update.
         """
+
         pass
 
     def on_trade(self, trade):
         """
         Callback of new trade data update.
         """
+
         self.put_event()
 
     def on_stop_order(self, stop_order):

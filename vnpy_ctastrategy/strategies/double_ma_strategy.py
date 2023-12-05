@@ -81,6 +81,9 @@ class DoubleMaStrategy(CtaTemplate):
         cross_over = self.fast_ma0 > self.slow_ma0 and self.fast_ma1 < self.slow_ma1
         cross_below = self.fast_ma0 < self.slow_ma0 and self.fast_ma1 > self.slow_ma1
 
+        msg = f"{bar.datetime}, {self.fast_ma0}, {self.slow_ma0}"
+        self.logging(msg)
+
         if cross_over:
             if self.pos == 0:
                 self.buy(bar.close_price, 1)
@@ -117,3 +120,7 @@ class DoubleMaStrategy(CtaTemplate):
         Callback of stop order update.
         """
         pass
+
+    def logging(self, msg: str) -> None:
+        with open('/Users/huangxuanhao/Desktop/MyProject/mein_vnpy/doublema.txt', 'a') as file:
+            file.write(msg + '\n')

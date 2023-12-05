@@ -11,11 +11,10 @@ from vnpy_ctastrategy import (
 import numpy as np
 from scipy.stats import binom
 import pandas as pd
-class DoubleBayesianStrategy(CtaTemplate):
+class BayesianBinomialStrategy(CtaTemplate):
     author = "Xuanhao"
 
     prior = 0
-    posterior = 0
     long_trend_window_size = 5
     short_trend_window_size = 5
     long_trend_period = 60
@@ -33,6 +32,8 @@ class DoubleBayesianStrategy(CtaTemplate):
         self.bg_short = BarGenerator(self.on_bar, self.short_trend_period, self.on_short_bar)
         self.am_long = ArrayManager(self.long_trend_window_size)
         self.am_short = ArrayManager(self.short_trend_window_size)
+        self.thetaSpace = np.linspace(0, 1, 50)  # Possible values for theta (market up probability)
+        self.priors_inited = False
 
     def on_init(self):
         self.write_log("策略初始化")
@@ -46,9 +47,6 @@ class DoubleBayesianStrategy(CtaTemplate):
         self.write_log("策略停止")
         self.put_event()
 
-    # def on_tick(self, tick: TickData):
-    #     self.bg.update_tick(tick)
-    #
     def on_bar(self, bar: BarData):
         self.bg_long.update_bar(bar)
         self.bg_short.update_bar(bar)
@@ -58,49 +56,32 @@ class DoubleBayesianStrategy(CtaTemplate):
         self.am_long.update_bar(long_bar)
         if not self.am_long.inited:
             return
+
         ups = sum(1 for index in range(self.am_long.size) if self.am_long.close_array[index] > self.am_long.open_array[index])
-        # update prior
-        self.prior = ups/self.long_trend_window_size
+        self.priors = binom.pmf(ups, self.am_long.size, self.thetaSpace)
+        self.priors_inited = True
+
 
     def on_short_bar(self, short_bar: BarData):
         self.am_short.update_bar(short_bar)
         if not self.am_short.inited:
             return
 
-        if self.prior == 0:
+        if not self.priors_inited:
             return
 
         ups = sum(1 for index in range(self.am_short.size) if self.am_short.close_array[index] > self.am_short.open_array[index])
-        likelihood = self.compute_likelihood(ups)
-        if likelihood == 0:
-            return
+        likelihoods = binom.pmf(ups, self.am_short.size, self.thetaSpace)
 
-        p_D = self.compute_normalizing_constant(ups)
-        self.posterior = likelihood * self.prior / p_D
-        msg = f"posterior: {self.posterior}, prior: {self.prior}, likelihood: {likelihood}，compute_normalizing_constant:{p_D}"
-        print(msg)
+        normalized_evidence = np.sum(likelihoods * self.priors)
+        normalized_posterior = (likelihoods * self.priors) / normalized_evidence
+        max_posterior_theta = self.thetaSpace[np.argmax(normalized_posterior)]
 
-
-        if self.posterior >= self.buy_threshold and self.pos == 0:
+        if max_posterior_theta >= self.buy_threshold and self.pos == 0:
             self.buy(short_bar.close_price, self.fix_size)
-            # print(f"buy {self.fix_size} at price {short_bar.close_price} on {short_bar.datetime}")
 
-        elif self.posterior <= self.sell_threshold and self.pos !=0:
-            self.sell(short_bar.close_price, self.fix_size)
-            # print(f"sell {self.fix_size} at price {short_bar.close_price} on {short_bar.datetime}")
-
-
-    def compute_likelihood(self, ups):
-        likelihood:float = binom.pmf(ups, self.am_short.size, self.prior)
-        return likelihood
-
-    def compute_normalizing_constant(self, ups):
-        """
-        Compute the normalizing constant p(D) using a sequence of prior values.
-        """
-        prior_values = np.linspace(0, 1, self.long_trend_window_size)
-        p_D = sum(binom.pmf(ups, self.am_short.size, prior) * prior for prior in prior_values)
-        return p_D
+        elif max_posterior_theta <= self.sell_threshold and self.pos !=0:
+            self.sell(short_bar.close_price, self.pos)
 
     def on_order(self, order):
         pass

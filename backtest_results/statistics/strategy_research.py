@@ -1,40 +1,41 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.stats import norm
+from scipy.stats import binom, beta
 
-# 生成模拟数据
-np.random.seed(0)
-true_slope = 2.0
-true_intercept = 1.0
-data_noise = 0.5
-x_observed = np.linspace(0, 10, 20)
-y_observed = true_slope * x_observed + true_intercept + np.random.normal(0, data_noise, len(x_observed))
+# Parameters
+short_size = 10  # Size of the short period
+long_size = 5    # Size of the long period
+theta_space = np.linspace(0, 1, 100)  # Possible values for theta (market up probability)
 
-# 定义模型参数的先验分布（正态分布）
-prior_mean = np.array([0, 0])
-prior_covariance = np.array([[1, 0], [0, 1]])
+# Observed data
+long_up = 2  # Number of ups in the long period
+short_up = 10  # Number of ups in the short period
 
-# 基于观测数据计算后验分布
-X = np.vstack([np.ones_like(x_observed), x_observed]).T
-likelihood_covariance = data_noise**2 * np.eye(len(x_observed))
-posterior_covariance = np.linalg.inv(np.linalg.inv(prior_covariance) + np.dot(X.T, np.dot(np.linalg.inv(likelihood_covariance), X)))
-posterior_mean = np.dot(posterior_covariance, np.dot(np.linalg.inv(prior_covariance), prior_mean) + np.dot(X.T, np.dot(np.linalg.inv(likelihood_covariance), y_observed)))
+# Parameters for the Beta distribution (using long-term data)
+alpha = long_up + 1
+beta_param = long_size - long_up + 1
 
-# 从后验分布中采样参数值
-num_samples = 1000
-parameter_samples = np.random.multivariate_normal(posterior_mean, posterior_covariance, num_samples)
+# Calculate priors based on long term data using Beta distribution
+priors = beta.pdf(theta_space, alpha, beta_param)/100
 
-# 生成新数据点的预测分布
-x_new = np.linspace(0, 10, 100)
-y_pred_samples = np.outer(parameter_samples[:, 1], x_new) + parameter_samples[:, 0][:, np.newaxis]
+# Likelihood for the short period data given different thetas
+likelihoods = binom.pmf(short_up, short_size, theta_space)
 
-# 绘制预测分布
-plt.figure(figsize=(10, 6))
-plt.scatter(x_observed, y_observed, label='观测数据', color='blue', alpha=0.5)
-for i in range(num_samples):
-    plt.plot(x_new, y_pred_samples[i], color='red', alpha=0.1)
-plt.xlabel('X')
-plt.ylabel('Y')
-plt.title('线性回归模型的预测分布')
+# Calculate the evidence (normalizing constant)
+evidence = np.sum(likelihoods * priors)
+
+# Calculate the posterior distribution
+posterior = (likelihoods * priors) / evidence
+max_posterior_theta = theta_space[np.argmax(posterior)]
+print(max_posterior_theta)
+
+# Plotting the prior and posterior distributions
+plt.figure(figsize=(12, 6))
+plt.plot(theta_space, priors, label='Beta Prior', color='blue')
+plt.plot(theta_space, posterior, label='Posterior', color='red')
+plt.xlabel('Theta')
+plt.ylabel('Density')
+plt.title('Prior and Posterior Distributions')
 plt.legend()
+plt.grid(True)
 plt.show()
