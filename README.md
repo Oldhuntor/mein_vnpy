@@ -12,4 +12,4 @@ A wrapper of vnpy
 
 * P-signal strategy
 * Bayesian strategy
-* Hierarchical Bayesian strategy
+* Hierarchical Bayesian strategy (Probabilistic order)

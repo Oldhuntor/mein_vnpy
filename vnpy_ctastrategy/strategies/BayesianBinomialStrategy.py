@@ -9,9 +9,10 @@ from vnpy_ctastrategy import (
     ArrayManager,
 )
 import numpy as np
-from scipy.stats import binom,beta
+from scipy.stats import binom
 import pandas as pd
-class BayesBetaBinomial(CtaTemplate):
+
+class BayesianBinomialStrategy(CtaTemplate):
     author = "Xuanhao"
 
     prior = 0
@@ -59,12 +60,6 @@ class BayesBetaBinomial(CtaTemplate):
 
         ups = sum(1 for index in range(self.am_long.size) if self.am_long.close_array[index] > self.am_long.open_array[index])
         self.priors = binom.pmf(ups, self.am_long.size, self.thetaSpace)
-
-        alpha = ups + 1
-        beta_param = self.am_long.size - ups + 1
-
-        self.priors = beta.pdf(self.thetaSpace, alpha, beta_param)
-
         self.priors_inited = True
 
 
@@ -83,23 +78,11 @@ class BayesBetaBinomial(CtaTemplate):
         normalized_posterior = (likelihoods * self.priors) / normalized_evidence
         max_posterior_theta = self.thetaSpace[np.argmax(normalized_posterior)]
 
-        if max_posterior_theta > self.buy_threshold:
-            if self.pos >= 0:
-                self.buy(short_bar.close_price, self.fix_size)
-            else:
-                self.cover(short_bar.close_price, self.pos)
-                self.buy(short_bar.close_price, self.fix_size)
+        if max_posterior_theta >= self.buy_threshold and self.pos == 0:
+            self.buy(short_bar.close_price, self.fix_size)
 
-
-        if max_posterior_theta < self.sell_threshold:
-            if self.pos <= 0:
-                self.short(short_bar.close_price, self.fix_size)
-            else:
-                self.sell(short_bar.close_price, self.pos)
-                self.short(short_bar.close_price, self.fix_size)
-
-
-
+        elif max_posterior_theta <= self.sell_threshold and self.pos !=0:
+            self.sell(short_bar.close_price, self.pos)
 
     def on_order(self, order):
         pass
