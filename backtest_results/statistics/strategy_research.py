@@ -9,7 +9,7 @@ theta_space = np.linspace(0, 1, 1000)  # Possible values for theta
 
 # Observed data
 long_up = 20  # Number of ups in the long period
-short_up = 4  # Number of ups in the short period
+short_up = 2  # Number of ups in the short period
 
 # Beta distribution parameters
 alpha = long_up
@@ -42,7 +42,7 @@ max_posterior_theta = theta_space[np.argmax(posterior)]
 
 # Plotting
 plt.figure(figsize=(12, 6))
-plt.plot(theta_space, cal_posterior, label='cal Beta Posterior', color='blue')
+plt.plot(theta_space, priors, label='prior', color='blue')
 plt.plot(theta_space, posterior, label='Normalized Posterior', color='red')
 plt.xlabel('Theta')
 plt.ylabel('Density')
@@ -50,6 +50,4 @@ plt.title('Prior and Posterior Distributions')
 plt.legend()
 plt.grid(True)
 plt.show()
-
-max_posterior_theta, max_posterior_value
 

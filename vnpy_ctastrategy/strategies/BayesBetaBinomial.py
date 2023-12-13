@@ -9,8 +9,6 @@ from vnpy_ctastrategy import (
     ArrayManager,
 )
 import numpy as np
-from scipy.stats import binom,beta
-import pandas as pd
 
 class BayesBetaBinomial(CtaTemplate):
     author = "Xuanhao"
@@ -53,7 +51,6 @@ class BayesBetaBinomial(CtaTemplate):
         self.bg_long.update_bar(bar)
         self.bg_short.update_bar(bar)
 
-
     def on_long_bar(self, long_bar: BarData):
         self.am_long.update_bar(long_bar)
         if not self.am_long.inited:
@@ -76,11 +73,9 @@ class BayesBetaBinomial(CtaTemplate):
         ups = sum(1 for index in range(self.am_short.size) if self.am_short.close_array[index] > self.am_short.open_array[index])
         pred_post = (self.alpha + ups) / (self.alpha + self.beta_param + self.am_short.size)
 
-
         random_number = np.random.rand()
         if self.dual_side:
-            if random_number < pred_post:
-
+            if random_number < 1:         # 设置一个0到1的随机数，让它不要总是开仓，适合短周期策略，< 1时即是忽略此条件
                 # both long and short
                 if pred_post > self.buy_threshold:
                     if self.pos >= 0:
@@ -107,15 +102,3 @@ class BayesBetaBinomial(CtaTemplate):
             if pred_post < self.sell_threshold:
                 if self.pos != 0:
                     self.sell(short_bar.close_price, self.pos)
-
-
-
-
-    def on_order(self, order):
-        pass
-
-    def on_trade(self, trade):
-        pass
-
-    def on_stop_order(self, stop_order):
-        pass
