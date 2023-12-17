@@ -12,6 +12,10 @@ import numpy as np
 from vnpy.trader.object import Interval
 from scipy.stats import gamma, poisson
 
+interval_map = {"m": Interval.MINUTE,
+                "h": Interval.HOUR,
+                "d": Interval.DAILY}
+
 class PoissonGammaStrategy(CtaTemplate):
     author = "Xuanhao"
 
@@ -22,23 +26,22 @@ class PoissonGammaStrategy(CtaTemplate):
     short_trend_window_size = 5
     long_trend_period = 1 # 1hour 2hour
     short_trend_period = 5 # 5 minutes
+    long_trend_interval = "m"
+    short_trend_interval = "m"
     fix_size = 1
     buy_threshold = 0.55
     sell_threshold = 0.45
     dual_side = 1
-    parameters = ["dual_side", "pyramiding", "long_trend_window_size","short_trend_window_size","long_trend_period", "short_trend_period" ,"fix_size", "buy_threshold", "sell_threshold", "frequency"]
+    parameters = ["dual_side", "pyramiding", "long_trend_window_size","short_trend_window_size","long_trend_period", "short_trend_period" ,"fix_size", "buy_threshold", "sell_threshold", "frequency", "long_trend_interval", "short_trend_interval"]
     variables = ["bayesian_prob"]
 
     def __init__(self, cta_engine, strategy_name, vt_symbol, setting):
         super().__init__(cta_engine, strategy_name, vt_symbol, setting)
+        long_interval = interval_map[self.long_trend_interval]
+        short_interval = interval_map[self.short_trend_interval]
 
-        if self.long_trend_period < 5:
-            interval = Interval.HOUR
-        else:
-            interval = Interval.MINUTE
-
-        self.bg_long = BarGenerator(self.on_bar, self.long_trend_period, self.on_long_bar, interval=interval)
-        self.bg_short = BarGenerator(self.on_bar, self.short_trend_period, self.on_short_bar)
+        self.bg_long = BarGenerator(self.on_bar, self.long_trend_period, self.on_long_bar, interval=long_interval)
+        self.bg_short = BarGenerator(self.on_bar, self.short_trend_period, self.on_short_bar, interval=short_interval)
         self.am_long = ArrayManager(self.long_trend_window_size*self.frequency)
         self.am_short = ArrayManager(self.short_trend_window_size*self.frequency)
         self.priors_inited = False
@@ -87,7 +90,8 @@ class PoissonGammaStrategy(CtaTemplate):
             return
 
         poisson_event = []
-        for order in range(self.long_trend_window_size):
+
+        for order in range(self.short_trend_window_size):
             ups = sum(1 for index in np.arange((order) * self.frequency, (order + 1) * self.frequency, 1) if
                       self.am_short.close_array[index] > self.am_short.open_array[index])
             poisson_event.append(ups)
@@ -95,14 +99,14 @@ class PoissonGammaStrategy(CtaTemplate):
         self.alpha_post = self.alpha_prior + sum(poisson_event)
         self.beta_post = self.beta_prior + self.short_trend_window_size
 
-        # sample lambda for calculation predictive posterior
-        lambda_samples = np.random.gamma(self.alpha_post, 1 / self.beta_post, 100)
-        prob_over_half = np.mean([poisson.cdf(self.short_trend_window_size/2, l) for l in lambda_samples])
-
+        # use posterior mean or mode
+        self.poster_mean = self.alpha_post/self.beta_post
+        self.poster_var = self.alpha_post/(self.beta_post)**2
+        self.poster_mode = (self.alpha_post-1)/self.beta_post
 
         if self.dual_side:
             # both long and short
-            if prob_over_half > self.buy_threshold:
+            if self.poster_mode/self.short_trend_window_size > self.buy_threshold:
                 if self.pos >= 0:
                     if abs(self.pos) < self.pyramiding:
                         self.buy(short_bar.close_price, self.fix_size)
@@ -111,7 +115,7 @@ class PoissonGammaStrategy(CtaTemplate):
                     self.buy(short_bar.close_price, self.fix_size)
 
 
-            if prob_over_half < self.sell_threshold:
+            if self.poster_mode/self.short_trend_window_size < self.sell_threshold:
                 if self.pos <= 0:
                     if abs(self.pos) < self.pyramiding:
                         self.short(short_bar.close_price, self.fix_size)
@@ -120,10 +124,10 @@ class PoissonGammaStrategy(CtaTemplate):
                     self.short(short_bar.close_price, self.fix_size)
 
         else:
-            if prob_over_half > self.buy_threshold:
+            if self.poster_mode/self.short_trend_window_size > self.buy_threshold:
                 if self.pos >= 0 and self.pos < self.pyramiding:
                     self.buy(short_bar.close_price, self.fix_size)
 
-            if prob_over_half < self.sell_threshold:
+            if self.poster_mode/self.short_trend_window_size < self.sell_threshold:
                 if self.pos != 0:
                     self.sell(short_bar.close_price, self.pos)

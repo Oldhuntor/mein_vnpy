@@ -58,3 +58,26 @@ prob_over_20 = np.mean([poisson.cdf(20, l) for l in lambda_samples])
 prob_at_least_15 = np.mean([1 - poisson.cdf(14, l) for l in lambda_samples])
 
 print(prob_over_20, prob_at_least_15)
+
+# 计算predictive distribution
+data = 15
+gamma.pdf(data, a=alpha_posterior, scale=1/beta_posterior)
+lambda_space = np.linspace(0,30,1000)
+
+prob_at_15 = np.sum([poisson.pmf(15, l)*gamma.pdf(l, a=alpha_posterior, scale=1/beta_posterior) for l in lambda_space])
+from scipy.stats import poisson, gamma
+
+prob_at_15 = np.sum(poisson.pmf(15, lambda_space) * gamma.pdf(lambda_space, a=alpha_posterior, scale=1/beta_posterior))
+# Assuming lambda_space is an array of lambda values
+delta_lambda = lambda_space[1] - lambda_space[0]  # Calculate the step size
+
+# Compute the predictive probability, scaling by the step size
+prob_at_15 = np.sum(poisson.pmf(15, lambda_space) * gamma.pdf(lambda_space, a=alpha_posterior, scale=1/beta_posterior)) * delta_lambda
+
+
+post_prop = []
+for x_new in np.arange(15,30,1):
+    prob_new = np.sum(poisson.pmf(x_new, lambda_space) * gamma.pdf(lambda_space, a=alpha_posterior,
+                                                                  scale=1 / beta_posterior)) * delta_lambda
+    post_prop.append(prob_new)
+post_prop = sum(post_prop)

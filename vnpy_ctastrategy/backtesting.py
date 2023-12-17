@@ -56,7 +56,7 @@ class BacktestingEngine:
         self.pricetick: float = 0
         self.capital: int = 1_000_000
         self.risk_free: float = 0
-        self.annual_days: int = 240
+        self.annual_days: int = 365
         self.mode: BacktestingMode = BacktestingMode.BAR
 
         self.strategy_class: Type[CtaTemplate] = None
@@ -122,7 +122,7 @@ class BacktestingEngine:
         end: datetime = None,
         mode: BacktestingMode = BacktestingMode.BAR,
         risk_free: float = 0,
-        annual_days: int = 240
+        annual_days: int = 365
     ) -> None:
         """"""
         self.mode = mode

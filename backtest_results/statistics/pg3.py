@@ -54,7 +54,7 @@ for i in range(5):
     # 创建伽玛分布的先验和后验分布
     prior_dist = gamma(alpha_prior, scale = 1/beta_prior)
     posterior_dist = gamma(alpha_posterior, scale = 1/beta_posterior)
-    lambda_samples = np.random.gamma(alpha_posterior, 1 / beta_posterior, 1000)
+    lambda_samples = np.random.gamma(alpha_posterior, 1/beta_posterior, 1000)
 
     # 生成伽玛分布的概率密度函数 (PDF) 数据
     x = np.linspace(0, 50, 100000)
@@ -66,7 +66,7 @@ for i in range(5):
     plt.plot(x, y_prior, label='Prior Distribution')
     plt.plot(x, y_posterior, label='Posterior Distribution')
     plt.title('Gamma Distribution: Prior vs Posterior')
-    plt.xlabel('Rate')
+    plt.xlabel('lambda')
     plt.ylabel('Density')
     plt.legend()
     plt.show()
