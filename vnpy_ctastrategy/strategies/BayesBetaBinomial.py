@@ -23,8 +23,9 @@ class BayesBetaBinomial(CtaTemplate):
     buy_threshold = 0.55
     sell_threshold = 0.45
     dual_side = 1
+    pred_post = 0
     parameters = ["dual_side", "pyramiding", "long_trend_window_size","short_trend_window_size","long_trend_period", "short_trend_period" ,"fix_size", "buy_threshold", "sell_threshold"]
-    variables = ["bayesian_prob"]
+    variables = ["pred_post"]
 
     def __init__(self, cta_engine, strategy_name, vt_symbol, setting):
         super().__init__(cta_engine, strategy_name, vt_symbol, setting)
@@ -37,7 +38,7 @@ class BayesBetaBinomial(CtaTemplate):
 
     def on_init(self):
         self.write_log("策略初始化")
-        self.load_bar(10)
+        self.load_bar(100)
 
     def on_start(self):
         self.write_log("策略启动")
@@ -48,10 +49,16 @@ class BayesBetaBinomial(CtaTemplate):
         self.put_event()
 
     def on_bar(self, bar: BarData):
+        print(bar)
         self.bg_long.update_bar(bar)
         self.bg_short.update_bar(bar)
 
+    def on_tick(self, tick: TickData):
+        self.bg_long.update_tick(tick)
+        self.bg_short.update_tick(tick)
+
     def on_long_bar(self, long_bar: BarData):
+        print(long_bar)
         self.am_long.update_bar(long_bar)
         if not self.am_long.inited:
             return
@@ -60,9 +67,11 @@ class BayesBetaBinomial(CtaTemplate):
         self.alpha = ups + 1
         self.beta_param = self.am_long.size - ups + 1
         self.priors_inited = True
-
+        self.put_event()
 
     def on_short_bar(self, short_bar: BarData):
+        print(short_bar)
+
         self.am_short.update_bar(short_bar)
         if not self.am_short.inited:
             return
@@ -72,7 +81,7 @@ class BayesBetaBinomial(CtaTemplate):
 
         ups = sum(1 for index in range(self.am_short.size) if self.am_short.close_array[index] > self.am_short.open_array[index])
         pred_post = (self.alpha + ups) / (self.alpha + self.beta_param + self.am_short.size)
-
+        self.pred_post = pred_post
         random_number = np.random.rand()
         if self.dual_side:
             if random_number < 1:         # 设置一个0到1的随机数，让它不要总是开仓，适合短周期策略，< 1时即是忽略此条件
@@ -102,3 +111,5 @@ class BayesBetaBinomial(CtaTemplate):
             if pred_post < self.sell_threshold:
                 if self.pos != 0:
                     self.sell(short_bar.close_price, self.pos)
+
+        self.put_event()

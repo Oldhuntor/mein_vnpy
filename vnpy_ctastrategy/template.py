@@ -3,7 +3,7 @@ from copy import copy
 from typing import Any, Callable, List
 
 from vnpy.trader.constant import Interval, Direction, Offset
-from vnpy.trader.object import BarData, TickData, OrderData, TradeData
+from vnpy.trader.object import BarData, TickData, OrderData, TradeData, PositionData, AccountData
 from vnpy.trader.utility import virtual
 
 from .base import StopOrder, EngineType
@@ -116,6 +116,20 @@ class CtaTemplate(ABC):
     def on_tick(self, tick: TickData) -> None:
         """
         Callback of new tick data update.
+        """
+        pass
+
+    @virtual
+    def on_account(self, account: AccountData) -> None:
+        """
+        Callback of new account data update.
+        """
+        pass
+
+    @virtual
+    def on_position(self, position: PositionData) -> None:
+        """
+        Callback of new position data update.
         """
         pass
 

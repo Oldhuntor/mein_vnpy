@@ -14,7 +14,8 @@ from scipy.stats import gamma, poisson
 
 interval_map = {"m": Interval.MINUTE,
                 "h": Interval.HOUR,
-                "d": Interval.DAILY}
+                "d": Interval.DAILY,
+                "t": Interval.TICK}
 
 class PoissonGammaStrategy(CtaTemplate):
     author = "Xuanhao"
@@ -32,8 +33,9 @@ class PoissonGammaStrategy(CtaTemplate):
     buy_threshold = 0.55
     sell_threshold = 0.45
     dual_side = 1
+    poster_mode = 0
     parameters = ["dual_side", "pyramiding", "long_trend_window_size","short_trend_window_size","long_trend_period", "short_trend_period" ,"fix_size", "buy_threshold", "sell_threshold", "frequency", "long_trend_interval", "short_trend_interval"]
-    variables = ["bayesian_prob"]
+    variables = ["poster_mode"]
 
     def __init__(self, cta_engine, strategy_name, vt_symbol, setting):
         super().__init__(cta_engine, strategy_name, vt_symbol, setting)
@@ -59,6 +61,7 @@ class PoissonGammaStrategy(CtaTemplate):
         self.put_event()
 
     def on_bar(self, bar: BarData):
+        print(bar)
         self.bg_long.update_bar(bar)
         self.bg_short.update_bar(bar)
 
@@ -131,3 +134,7 @@ class PoissonGammaStrategy(CtaTemplate):
             if self.poster_mode/self.short_trend_window_size < self.sell_threshold:
                 if self.pos != 0:
                     self.sell(short_bar.close_price, self.pos)
+
+
+    def on_tick(self, tick: TickData) -> None:
+        print(tick)

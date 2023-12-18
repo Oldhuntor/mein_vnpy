@@ -23,6 +23,8 @@ from vnpy.trader.object import (
     OrderData,
     TradeData,
     ContractData,
+    PositionData,
+    AccountData
 )
 from vnpy.trader.event import (
     EVENT_TICK,
@@ -88,6 +90,8 @@ class CtaEngine(BaseEngine):
         self.symbol_strategy_map: defaultdict = defaultdict(list)       # vt_symbol: strategy list
         self.orderid_strategy_map: dict = {}                            # vt_orderid: strategy
         self.strategy_orderid_map: defaultdict = defaultdict(set)       # strategy_name: orderid set
+        self.strategy_positionid_map: defaultdict = defaultdict(set)
+        self.strategy_accountid_map: defaultdict = defaultdict(set)
 
         self.stop_order_count: int = 0                                  # for generating stop_orderid
         self.stop_orders: Dict[str, StopOrder] = {}                     # stop_orderid: stop_order
@@ -218,12 +222,26 @@ class CtaEngine(BaseEngine):
         self.put_strategy_event(strategy)
 
     def process_position_event(self, event: Event) -> None:
+        position: PositionData = event.data
 
-        pass
+        strategies: list = self.symbol_strategy_map[position.vt_symbol]
+        if not strategies:
+            return
+
+        for strategy in strategies:
+            if strategy.inited:
+                self.call_strategy_func(strategy, strategy.on_position, position)
 
     def process_account_event(self, event: Event) -> None:
+        account: AccountData = event.data
+        # strategies: list = self.symbol_strategy_map[account.vt_symbol]
+        # if not strategies:
+        #     return
 
-        pass
+        for strategy in self.strategies:
+            strategy = self.strategies[strategy]
+            if strategy.inited:
+                self.call_strategy_func(strategy, strategy.on_account, account)
 
     def check_stop_order(self, tick: TickData) -> None:
         """"""
