@@ -513,7 +513,7 @@ class BacktestingEngine:
         fig.add_trace(pnl_histogram, row=4, col=1)
 
         fig.update_layout(height=1000, width=1000)
-        fig.write_html(f'./backtest_results/graphs/bayesian.html')
+        fig.write_html(f'/Users/huangxuanhao/Desktop/MyProject/mein_vnpy/backtest_results/graphs/bayes.html')
         fig.show()
 
     def run_bf_optimization(
